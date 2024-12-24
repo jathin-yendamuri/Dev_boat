@@ -1,24 +1,62 @@
 
-const server = require("express");
+const express = require("express");
 const {database} = require("./config/database");
 const User = require("./models/User");
 
-const app = server();
+const app = express();
+app.use("/",express.json());   // using a middleware for converting the incoming data which is in json to a javascriot object , exprexx.json()[middleware]
 
-// saving the data into DB using post method..
+// creating an api's using get and retreving the data from the data base.
 
+app.get("/user/data",async (req,res)=>
+{
+    try{
+        const udata = await User.find({Email:req.body.email});
+        if(udata.length!=0)
+        {
+        console.log("user found");
+        res.send(udata);
+        }
+        else{
+            res.status(400).send("user does not found");
+            console.log("user does not found")
+        }
+    }
+    catch(err)
+    {
+        res.status(400).send(err.message);
+        console.log("Something went wrong");
+    }
+})
+
+//all data
+app.get("/user/feed",async (req,res)=>
+{
+    try{
+        const users = await User.find({}); // give alll the data (all documents in user collection)
+        // const users = await User.findOne({Email:"ben23@gmail.com"});   // only give the oldest repeated document which matches the email.
+        res.send(users);
+        console.log("data retreved");
+    }
+    catch(err)
+    {
+        res.status(400).send("message");
+        console.log("something went wrong");
+    }
+
+});
+
+
+
+
+
+
+// saving the data into DB using post by making the API dynamic , (req.body)->gives the data i.e coming from the client after converting into js object.
 app.post("/user/signup",async (req,res)=>
 {
     //creating instance of a user model..
-    const Userdoc = new User(
-        {
-            firstName:"jathin",
-            lastName:"Yendamuri",
-            Email:"jathin@gmail.com",
-            Password:"Database@123",
-            Age:21
-        }
-    );
+    const Userdoc = new User(req.body);
+    console.log(req.body);
 
     //Handling the error if occuers at the time of saving the data to DB (due to internet connection or etc,...)
     //saving the data into db..
