@@ -1,54 +1,62 @@
 
 const server = require("express");
+const {database} = require("./config/database");
+const User = require("./models/User");
 
 const app = server();
 
-const {adminauth,userauth} = require("./middleware/authorization.js");
+// saving the data into DB using post method..
 
-app.use("/admin",adminauth);
-
-// here we no need to check the auth fro user because its login .
-app.post("/user/login",(req,res)=>           
+app.post("/user/signup",async (req,res)=>
 {
-    res.send("logged in..");                            
-});
-//here we user need to be authorized
-app.get("/user/details",userauth,(req,res)=>          
-{
-    res.send("user details..!");
-})
+    //creating instance of a user model..
+    const Userdoc = new User(
+        {
+            firstName:"jathin",
+            lastName:"Yendamuri",
+            Email:"jathin@gmail.com",
+            Password:"Database@123",
+            Age:21
+        }
+    );
 
-
-
-app.get("/admin/getalldetails",(req,res,next)=>{
-
-    //auth code..
-    // const token = "sample";
-    // const isauthorized = token === "sample";
-    // if(!isauthorized)
-    //     res.status(401).send("unauthorized access..!");
-    // else
-    //     //fetch data from DB ..
-        res.send({Id:9,name:"jathin",Age:21,e_mail:"jathinyendamuri@gmail.com"});
+    //Handling the error if occuers at the time of saving the data to DB (due to internet connection or etc,...)
+    //saving the data into db..
+        await Userdoc.save().then(()=>
+        {
+            res.send("Data added to DB");
+        }).catch((err)=>
+    {
+        console.error("data not saved..!",err.message);
+    })
 });
 
+//saving the data dynamically into DB ..
+app.post("/user/signup/:firstName/:lastName/:Email/:Password/:Age",async (req,res)=>
+    {
+        const data = req.params;
+        const Userdoc = new User(
+           data
+        );
+    
+        //Handling the error if occuers at the time of saving the data to DB (due to internet connection or etc,...)
+        //saving the data into db..
+        try{await Userdoc.save();
+            res.send("Data added to DB");}
+            catch(err)
+            {
+                console.error("data not saved..!",err.message);
+            }
+    });
 
-app.get("/admin/deleteuser",(req,res)=>
+//always start the server only after the application is connected to DB..
+database().then(()=> 
 {
-    //auth code..
-    //delete user from DB..
-    res.send("user deleted");
-});
-
-
-app.get("/adduser",(req,res)=>
+    console.log("connected to DB");
+    app.listen(7777,()=>{
+        console.log("server is successfully listening on port 7777");
+    });
+}).catch((err)=>
 {
-    //auth code..
-    //code for adding user in DB..
-    res.send("user added");
-});
-
-
-app.listen(7777,()=>{
-    console.log("server is running at use 7777");
+    console.error("cant connect to DB..!");
 });
