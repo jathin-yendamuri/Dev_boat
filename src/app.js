@@ -18,7 +18,7 @@ app.get("/user/data",async (req,res)=>
         res.send(udata);
         }
         else{
-            res.status(400).send("user does not found");
+            res.status(404).send("user does not found");
             console.log("user does not found")
         }
     }
@@ -45,9 +45,6 @@ app.get("/user/feed",async (req,res)=>
     }
 
 });
-
-
-
 
 
 
@@ -86,6 +83,44 @@ app.post("/user/signup/:firstName/:lastName/:Email/:Password/:Age",async (req,re
                 console.error("data not saved..!",err.message);
             }
     });
+
+
+//UPDATING THE DATA USING PATCH METHOD..
+
+app.patch("/user/update",async (req,res)=>
+{
+    const data = req.body;
+    try{
+        // await User.findByIdAndDelete(req.body.id,data);
+        const before = await User.findOneAndUpdate({Email:req.body.Email},data,{returnDocument:"befor"}); // returns the user data before deletion .
+        res.send("Data updated successfully");
+        console.log(before);
+    }catch(err){
+        res.status(400).send(`user not found :- ${err.message}`);
+        console.log("Something Went Wrong..");
+    }
+})
+
+//delete using patch method :
+
+app.patch("/user/delete",async (req,res)=>
+{
+    try{
+        // User.findByIdAndDelete(req.body.id);
+        const Ddata = await User.findOneAndDelete({Email:req.body.Email});
+        if(Ddata === null)
+            res.status(401).send("User not Found..");
+        else{
+            res.send("user deleted from DB");
+            console.log(Ddata);
+        }
+    }
+    catch(err)
+    {
+        res.status(400).send(err.message);
+        console.log("something went wrong");
+    }
+})
 
 //always start the server only after the application is connected to DB..
 database().then(()=> 
