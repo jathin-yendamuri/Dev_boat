@@ -57,13 +57,14 @@ app.post("/user/signup",async (req,res)=>
 
     //Handling the error if occuers at the time of saving the data to DB (due to internet connection or etc,...)
     //saving the data into db..
-        await Userdoc.save().then(()=>
-        {
+    try{
+        await Userdoc.save()
             res.send("Data added to DB");
-        }).catch((err)=>
+        }catch(err)
     {
-        console.error("data not saved..!",err.message);
-    })
+        res.status(400).send("data not saved..! : " + err.message);
+        console.error("data not saved..! : " + err.message);
+    }
 });
 
 //saving the data dynamically into DB ..
@@ -87,18 +88,26 @@ app.post("/user/signup/:firstName/:lastName/:Email/:Password/:Age",async (req,re
 
 //UPDATING THE DATA USING PATCH METHOD..
 
-app.patch("/user/update",async (req,res)=>
+app.patch("/user/update/:userid",async (req,res)=>
 {
     const data = req.body;
     try{
-        // await User.findByIdAndDelete(req.body.id,data);
-        const before = await User.findOneAndUpdate({Email:req.body.Email},data,{returnDocument:"befor"}); // returns the user data before deletion .
+        // await User.findOneAndUpdate({Email:req.body.Email},data,{returnDocument:"befor"});
+        const noaccess = ["Email","id",];
+        Object.keys(data).forEach((k)=>
+        {
+            if(noaccess.includes(k))
+                throw new Error("no access to update email or id");
+        })
+        const before = await User.findByIdAndUpdate(req.params?.userid,data,{returnDocument:true,runValidators:true}); // returns the user data before deletion .
+
         res.send("Data updated successfully");
         console.log(before);
     }catch(err){
         res.status(400).send(`user not found :- ${err.message}`);
         console.log("Something Went Wrong..");
     }
+    
 })
 
 //delete using patch method :
