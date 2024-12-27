@@ -71,7 +71,7 @@ const userschema = new mongoose.Schema(
 
         }
     }
-});
+},{timestamps:true});
 
 const Usermodel = mongoose.model("User",userschema);
 

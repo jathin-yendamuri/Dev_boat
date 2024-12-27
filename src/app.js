@@ -2,19 +2,24 @@
 const express = require("express");
 const {database} = require("./config/database");
 const User = require("./models/User");
+const {validateSignUp} = require("./utils/validation");
+const bcrypt = require("bcrypt");
+const validator = require("validator");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 app.use("/",express.json());   // using a middleware for converting the incoming data which is in json to a javascriot object , exprexx.json()[middleware]
 
 // creating an api's using get and retreving the data from the data base.
 
-app.get("/user/data",async (req,res)=>
+app.get("/user/profile",async (req,res)=>
 {
     try{
+        
         const udata = await User.find({Email:req.body.email});
         if(udata.length!=0)
         {
-        console.log("user found");
+        console.log("user found..");
         res.send(udata);
         }
         else{
@@ -47,23 +52,52 @@ app.get("/user/feed",async (req,res)=>
 });
 
 
-
 // saving the data into DB using post by making the API dynamic , (req.body)->gives the data i.e coming from the client after converting into js object.
 app.post("/user/signup",async (req,res)=>
 {
-    //creating instance of a user model..
-    const Userdoc = new User(req.body);
+    
     console.log(req.body);
 
     //Handling the error if occuers at the time of saving the data to DB (due to internet connection or etc,...)
     //saving the data into db..
     try{
+        validateSignUp(req);
+        const encrypt = await bcrypt.hash(req.body?.password,10);
+        console.log(encrypt);
+        req.body.password=encrypt;
+        //creating instance of a user model..
+    const Userdoc = new User(req.body);
         await Userdoc.save()
             res.send("Data added to DB");
         }catch(err)
     {
-        res.status(400).send("data not saved..! : " + err.message);
-        console.error("data not saved..! : " + err.message);
+        res.status(400).send("data not saved.. : " + err.message);
+        console.error("data not saved.. : " + err.message);
+    }
+});
+
+//Logging in the user 
+app.post("/user/login",async (req,res)=>
+{
+    const profile = await User.findOne({Email:req.body.email})
+    console.log(profile);
+    try{
+        if(profile!=null)
+        {
+            const bool = await bcrypt.compare(req.body.password , profile.password);
+            if(bool){
+                res.send("Login Success..! ");
+            }else{
+                throw new Error("Invalid cred..");
+            }
+
+        }else{
+            throw new Error("invalid cred..");
+        }
+    }catch(err)
+    {
+        res.send("ERROR : "+err.message);
+        console.log("ERROR : "+err.message);
     }
 });
 
@@ -94,12 +128,22 @@ app.patch("/user/update/:userid",async (req,res)=>
     try{
         // await User.findOneAndUpdate({Email:req.body.Email},data,{returnDocument:"befor"});
         const noaccess = ["Email","id",];
-        Object.keys(data).forEach((k)=>
+        Object.keys(data).forEach(async (k)=>
         {
-            if(noaccess.includes(k))
-                throw new Error("no access to update email or id");
+           
+                if(noaccess.includes(k))
+                    throw new Error("no access to update email or id");
         })
-        const before = await User.findByIdAndUpdate(req.params?.userid,data,{returnDocument:true,runValidators:true}); // returns the user data before deletion .
+        if(Object.keys(data).includes("password"))
+        {
+            if(validator.isStrongPassword(data.password))   // validating password in api level eventhough we are having schema level password validation,  because after converting the password in the payload into hash ,the password my satisfy all the strong password conditions and no error is thrown when we are saving the updated password in DB even if the un-hashed password in the payload is not strong .
+                {
+                const encrypt = await bcrypt.hash(data?.password,10);
+            }else{
+                throw new Error("Set a Strong Password..")
+            }
+        }
+        const before = await User.findByIdAndUpdate(req.params?.userid,data,{returnDocument:"before",runValidators:true}); // returns the user data before deletion .
 
         res.send("Data updated successfully");
         console.log(before);
