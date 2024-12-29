@@ -82,10 +82,11 @@ app.post("/user/login",async (req,res)=>
     try{
         if(profile!=null)
         {
-            const bool = await bcrypt.compare(req.body.password , profile.password);
+            // const bool = await bcrypt.compare(req.body.password , profile.password);
+            const bool = await profile.passwordValidation(req);
             if(bool){
-                const jwttoken =  JWT.sign({_id:profile._id},"SecretKey@123",{expiresIn:'1h'});
-                
+                // const jwttoken =  JWT.sign({_id:profile._id},"SecretKey@123",{expiresIn:'1h'});
+                const jwttoken = await profile.getJWT();
                 res.cookie("token",jwttoken,{expires: new Date(Date.now()+1*3200000)});
                 res.send("Login Success..! ");
             }else{
