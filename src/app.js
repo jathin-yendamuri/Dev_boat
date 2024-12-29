@@ -6,27 +6,25 @@ const {validateSignUp} = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
 const cookieParser = require("cookie-parser");
+const JWT = require("jsonwebtoken");
+const { userauth } = require("./middleware/authorization");
 
 const app = express();
 app.use("/",express.json());   // using a middleware for converting the incoming data which is in json to a javascriot object , exprexx.json()[middleware]
-
+app.use("/",cookieParser());
 // creating an api's using get and retreving the data from the data base.
 
-app.get("/user/profile",async (req,res)=>
+app.post("/sendingconnectionrequest",userauth,(req,res)=>
+{
+    res.send(req.userdata);
+})
+
+app.get("/user/profile",userauth,async (req,res)=>
 {
     try{
-        
-        const udata = await User.find({Email:req.body.email});
-        if(udata.length!=0)
-        {
-        console.log("user found..");
-        res.send(udata);
+        const {userdata} = req;
+        res.send(userdata);
         }
-        else{
-            res.status(404).send("user does not found");
-            console.log("user does not found")
-        }
-    }
     catch(err)
     {
         res.status(400).send(err.message);
@@ -86,6 +84,9 @@ app.post("/user/login",async (req,res)=>
         {
             const bool = await bcrypt.compare(req.body.password , profile.password);
             if(bool){
+                const jwttoken =  JWT.sign({_id:profile._id},"SecretKey@123",{expiresIn:'1h'});
+                
+                res.cookie("token",jwttoken,{expires: new Date(Date.now()+1*3200000)});
                 res.send("Login Success..! ");
             }else{
                 throw new Error("Invalid cred..");

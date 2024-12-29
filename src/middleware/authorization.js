@@ -1,21 +1,27 @@
-const adminauth = (req,res,next)=>
-{
-    const token = "sample";
-    const isauthorized = token === "sample";
-    if(isauthorized)
-        next();
-    else
-        res.status(401).send("Unauthorized access..!");
+
+const JWT = require("jsonwebtoken");
+const User = require("../models/User");
+
+
+const userauth = async(req,res,next)=>
+{                                       
+   try
+   {
+    const token = req.cookies?.token;
+   if(!token)
+   {
+    throw new Error("Token not valid..!!!!");
+   }
+   const decodeddata = JWT.verify(token,"SecretKey@123");
+   const {_id} = decodeddata;
+   const userdata = await User.findById(_id);
+   req.userdata = userdata;
+   next();
+}
+   catch(err)
+   {
+    res.status(400).send("Error : "+err.message);
+   }   
 }
 
-const userauth = (req,res,next)=>
-{
-    const token = "user123";
-    const authorized = token === "user123";
-    if(!authorized)
-        res.status(401).send("Unauthorized user...!");
-    else
-        next();
-}
-
-module.exports = {adminauth,userauth};
+module.exports = {userauth};

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const JTW = require("jsonwebtoken");
 
 const userschema = new mongoose.Schema(
     {
@@ -72,6 +73,8 @@ const userschema = new mongoose.Schema(
         }
     }
 },{timestamps:true});
+
+
 
 const Usermodel = mongoose.model("User",userschema);
 
