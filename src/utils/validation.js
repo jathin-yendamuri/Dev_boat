@@ -12,4 +12,17 @@ const validateSignUp = (req)=>
         throw new Error("Required Both First name and last name with min 4 and max 20 characters");
 }
 
-module.exports = {validateSignUp};
+const updatevalidation = (req)=>
+{
+  const noaccess = ["Email","_id"];
+  for(const k of Object.keys(req.body)){
+
+    if(noaccess.includes(k))
+    {
+        return true;
+    }
+  }
+return false;
+}
+
+module.exports = {validateSignUp,updatevalidation};

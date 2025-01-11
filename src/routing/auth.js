@@ -55,10 +55,17 @@ authrouter.post("/user/login",async (req,res)=>
             }
         }catch(err)
         {
-            res.send("ERROR : "+err.message);
+            res.status(400).send("ERROR : "+err.message);
             console.log("ERROR : "+err.message);
         }
     });
+ 
+
+authrouter.post("/user/logout",(req,res)=>
+{
+    res.cookie("token",null,{expires : new Date(Date.now())});
+    res.send("logout successful..");
+})
 
 // //saving the data dynamically into DB ..
 // app.post("/user/signup/:firstName/:lastName/:Email/:Password/:Age",async (req,res)=>
@@ -70,7 +77,8 @@ authrouter.post("/user/login",async (req,res)=>
     
 //         //Handling the error if occuers at the time of saving the data to DB (due to internet connection or etc,...)
 //         //saving the data into db..
-//         try{await Userdoc.save();
+//         try{
+//             await Userdoc.save();
 //             res.send("Data added to DB");}
 //             catch(err)
 //             {
