@@ -63,7 +63,38 @@ requestsrouter.post("/request/send/:status/:toId",userauth,async (req,res)=>
     {
         res.status(400).json({message:`Error : ${err}`});
     }
+    });
 
-    })
+//Api for accepting the request. /request/review/:status/:reqId Or fromId
+
+requestsrouter.post("/request/review/:status/:reqId",userauth, async (req,res)=>
+{
+    try{
+    const validStatus = ["accepted","rejected"];
+    if(!validStatus.includes(req.params.status))
+    {
+        throw new Error("Invalid Status code..!");
+    }
+
+    const connectionReq = await connectionModel.findOne({
+        _id:req.params.reqId,
+        toId:req.userdata._id,
+        status:"like"
+    });
+    if(!connectionReq)
+    {
+        return res.status(400).json({"message":"Connection request does not exist.."});
+    }
+     
+    connectionReq.status=req.params.status;
+    const data = await connectionReq.save();
+    res.json({"message":`Connection ${req.params.status}`,"data":data});
+
+}
+    catch(err)
+    {
+        res.status(404).send("ERROR : "+err);
+    }
+});
 
 module.exports = requestsrouter;
